@@ -41,6 +41,8 @@ class Leases:
         False if not
         '''
         preferred = ip.IpAddr(preferred)
+        if int(preferred) not in range(int(self.lower), int(self.higher)):
+            return False
 
         current = self._leases.get(
             int(preferred),
