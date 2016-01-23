@@ -67,9 +67,17 @@ class addr:
 
 class IpAddr(addr):
     def __init__(self, address):
+        if isinstance(address, str):
+            address = bytes(address, 'ascii')
+
         if isinstance(address, bytes):
             octets = list(map(int, address.split(b'.')))
-            if len(octets) != 4:
+
+            if len(octets) == 2:
+                octets = [octets[0],0,0,octets[1]]
+            elif len(octets) == 3:
+                octets = [octets[0],octets[1],0,octets[2]]
+            elif len(octets) > 4:
                 raise TypeError('Invalid IP address')
 
             self._addr = 0
@@ -84,7 +92,7 @@ class IpAddr(addr):
                 raise TypeError('Invalid IP address')
             self._addr = address
         else:
-            raise TypeError('IP address can only be created from bytes or int')
+            raise TypeError('IP address can only be created from bytes. str or int')
 
     def __str__(self):
         octets = []
