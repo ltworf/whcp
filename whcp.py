@@ -9,7 +9,7 @@ from dhcp import DHCPPacket, DHCPOption
 from leases import Leases
 import ip
 
-def make_reply(message, client_addr, message_type):
+def make_reply(message, client_addr, message_type, params):
     offer = DHCPPacket(message)
     offer.bootp['OP'] = 2
     offer.bootp['SECS'] = 0
@@ -49,7 +49,7 @@ def make_reply(message, client_addr, message_type):
     # DNS
     option = DHCPOption(None)
     option.type = DHCPOption.DNS
-    option.data = b'0000' # FIXME Int IP addr of DNS
+    option.data = bytes(params.dns)
     offer.options.append(option)
 
     # End
@@ -67,70 +67,108 @@ def create_socket():
     s.bind(('',67))
     return s
 
-s = create_socket()
-# FIXME custom IP range
-leases = Leases(b'10.0.1.50', b'10.0.1.100')
+def set_params():
+    h = ip.IpAddr('10.0.0.100')
+    bytes(h)
+    str(h)
+    int(h)
 
-while 1: #main loop
-    try:
-        message, addressf = s.recvfrom(8192)
+    class Params:
+        pass
 
-        if addressf[0] != '0.0.0.0':
-            print ('Not to 0.0.0.0')
-            # Broken message
-            continue
+    p = Params()
 
+    p.gateway = ip.IpAddr('0.0.0.0')
+    p.dns = ip.IpAddr('8.8.8.8')
+    p.netmask = ip.IpAddr('255.0.0.0')
+    p.rangel = ip.IpAddr('10.0.0.50')
+    p.rangeh = ip.IpAddr('10.0.0.100')
+
+    switches, _ = getopt.getopt(sys.argv[1:],'g:d:n:r:R:')
+
+    for i in switches:
+        if i[0] == '-g':
+            p.gateway = ip.IpAddr(i[1])
+        if i[0] == '-d':
+            p.dns = ip.IpAddr(i[1])
+        if i[0] == '-n':
+            p.netmask = ip.IpAddr(i[1])
+        if i[0] == '-r':
+            p.rangel = ip.IpAddr(i[1])
+        if i[0] == '-R':
+            p.rangeh = ip.IpAddr(i[1])
+    return p
+
+def main():
+    params = set_params()
+    s = create_socket()
+    print('Leasing addresses in range %s - %s' % (params.rangel, params.rangeh))
+    leases = Leases(params.rangel, params.rangeh)
+
+    while 1: #main loop
         try:
-            dhcp_message = DHCPPacket(message)
-        except:
-            # Ignore all sort of malformed messages
-            print ('Not dhcp parsable')
-            continue
+            message, addressf = s.recvfrom(8192)
 
-        if dhcp_message.bootp['OP'] != DHCPPacket.BOOTP_REQUEST:
-            print ('Not REQUEST')
-            continue
+            if addressf[0] != '0.0.0.0':
+                print ('Not to 0.0.0.0')
+                # Broken message
+                continue
 
-        if dhcp_message.is_discovery():
-            client_addr = None
+            try:
+                dhcp_message = DHCPPacket(message)
+            except:
+                # Ignore all sort of malformed messages
+                print ('Not dhcp parsable')
+                continue
 
-            # Check if requested address can be given
-            if dhcp_message.get_requested_addr():
-                if leases.request_lease(
+            if dhcp_message.bootp['OP'] != DHCPPacket.BOOTP_REQUEST:
+                print ('Not REQUEST')
+                continue
+
+            if dhcp_message.is_discovery():
+                client_addr = None
+
+                # Check if requested address can be given
+                if dhcp_message.get_requested_addr():
+                    if leases.request_lease(
+                        dhcp_message.hwaddr,
+                        dhcp_message.get_requested_addr(),
+                        dhcp_message.get_hostname(),
+                    ):
+                        client_addr = dhcp_message.get_requested_addr()
+
+                if client_addr is None:
+                    client_addr = leases.request_address(
+                        dhcp_message.hwaddr,
+                        dhcp_message.get_hostname(),
+                    )
+
+                offer = make_reply(message, client_addr, b'\x02', params)
+                data = offer.pack()
+                s.sendto(data,('<broadcast>',68))
+
+            elif dhcp_message.is_request():
+
+                if not leases.request_lease(
                     dhcp_message.hwaddr,
                     dhcp_message.get_requested_addr(),
                     dhcp_message.get_hostname(),
                 ):
-                    client_addr = dhcp_message.get_requested_addr()
+                    # IP can't be granted, ignoring
+                    continue
 
-            if client_addr is None:
-                client_addr = leases.request_address(
-                    dhcp_message.hwaddr,
-                    dhcp_message.get_hostname(),
-                )
+                client_addr = dhcp_message.get_requested_addr()
+                print('Giving out address: %s' % ip.IpAddr(client_addr))
 
-            offer = make_reply(message, client_addr, b'\x02')
-            data = offer.pack()
-            s.sendto(data,('<broadcast>',68))
+                offer = make_reply(message, client_addr, b'\x05', params)
+                data = offer.pack()
+                s.sendto(data,(str(ip.IpAddr(client_addr)),68))
+                #s.sendto(data,('<broadcast>',68))
+            else:
+                print ('Unsupported DHCP message')
 
-        elif dhcp_message.is_request():
+        except KeyboardInterrupt:
+            exit()
 
-            if not leases.request_lease(
-                dhcp_message.hwaddr,
-                dhcp_message.get_requested_addr(),
-                dhcp_message.get_hostname(),
-            ):
-                # IP can't be granted, ignoring
-                continue
-
-            client_addr = dhcp_message.get_requested_addr()
-            print('Giving out address: %s' %ip.IpAddr(client_addr))
-
-            offer = make_reply(message, client_addr, b'\x05')
-            data = offer.pack()
-            s.sendto(data,(str(ip.IpAddr(client_addr)),68))
-        else:
-            print ('Unsupported DHCP message')
-
-    except KeyboardInterrupt:
-        exit()
+if __name__ == '__main__':
+    main()
