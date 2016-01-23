@@ -75,8 +75,6 @@ while 1: #main loop
     try:
         message, addressf = s.recvfrom(8192)
 
-        print(message, addressf)
-
         if addressf[0] != '0.0.0.0':
             print ('Not to 0.0.0.0')
             # Broken message
@@ -111,8 +109,6 @@ while 1: #main loop
                     dhcp_message.get_hostname(),
                 )
 
-            print('Giving out address: %s' %ip.IpAddr(client_addr))
-
             offer = make_reply(message, client_addr, b'\x02')
             data = offer.pack()
             s.sendto(data,('<broadcast>',68))
@@ -128,13 +124,13 @@ while 1: #main loop
                 continue
 
             client_addr = dhcp_message.get_requested_addr()
+            print('Giving out address: %s' %ip.IpAddr(client_addr))
 
             offer = make_reply(message, client_addr, b'\x05')
             data = offer.pack()
             s.sendto(data,(str(ip.IpAddr(client_addr)),68))
-
         else:
-            print ('Else :(')
+            print ('Unsupported DHCP message')
 
     except KeyboardInterrupt:
         exit()
