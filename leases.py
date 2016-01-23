@@ -3,14 +3,15 @@ import time
 
 import ip
 
+
 class Leases:
+
     def __init__(self, lower, higher):
         '''
         Keeps track of the assigned leases
 
         Leases(b'10.1.1.3',b'10.1.1.100')
         '''
-
         self.lower = ip.IpAddr(lower)
         self.higher = ip.IpAddr(higher)
 
@@ -52,5 +53,3 @@ class Leases:
         if current[0] == hwaddr:
             return True
         return False
-
-

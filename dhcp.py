@@ -6,23 +6,24 @@ from nstruct import nstruct
 bootp_message = nstruct(
     '!BBBBIHHIIII16s64s128sI',
     (
-        'OP', # Message type
-        'HTYPE', # Hardware type
-        'HLEN', # Hardware address length
+        'OP',  # Message type
+        'HTYPE',  # Hardware type
+        'HLEN',  # Hardware address length
         'HOPS',
-        'XID', # Transaction id
-        'SECS', # Seconds elapsed
-        'FAGS', #
-        'CIADDR', # (Client IP address)
-        'YIADDR', # (Your Client IP address)
-        'SIADDR', # (Next Server IP address)
-        'GIADDR', # (Gateway IP address)
-        'CHADDR', # (Client hardware address)
-        'SHOST', # Server host name
-        'BOOTP', # Bootp file
-        'COOKIE', # Magic cookie
+        'XID',  # Transaction id
+        'SECS',  # Seconds elapsed
+        'FAGS',
+        'CIADDR',  # (Client IP address)
+        'YIADDR',  # (Your Client IP address)
+        'SIADDR',  # (Next Server IP address)
+        'GIADDR',  # (Gateway IP address)
+        'CHADDR',  # (Client hardware address)
+        'SHOST',  # Server host name
+        'BOOTP',  # Bootp file
+        'COOKIE',  # Magic cookie
     )
 )
+
 
 class DHCPOption:
     END = 255
@@ -40,8 +41,8 @@ class DHCPOption:
 
     def __init__(self, raw_data):
         if raw_data is not None:
-            _,length = struct.unpack('!BB', raw_data[:2])
-            type,length,data = struct.unpack('!BB%ds' % length, raw_data)
+            _, length = struct.unpack('!BB', raw_data[:2])
+            type, length, data = struct.unpack('!BB%ds' % length, raw_data)
             self.data = data
             self.type = type
             self.length = length
@@ -55,9 +56,9 @@ class DHCPOption:
             return b'\xff'
         return struct.pack('!BB', self.type, len(self.data)) + self.data
 
+
 class DHCPPacket:
     BOOTP_REQUEST = 1
-
 
     def __init__(self, raw_packet):
         if len(raw_packet) < bootp_message.size:
@@ -70,14 +71,14 @@ class DHCPPacket:
 
         raw_options = raw_packet[bootp_message.size:]
 
-        while len(raw_options)>=2:
-            type,length = struct.unpack('!BB', raw_options[:2])
+        while len(raw_options) >= 2:
+            type, length = struct.unpack('!BB', raw_options[:2])
 
             if type == DHCPOption.END:
                 break
 
-            self.options.append(DHCPOption(raw_options[:length+2]))
-            raw_options = raw_options[length+2:]
+            self.options.append(DHCPOption(raw_options[:length + 2]))
+            raw_options = raw_options[length + 2:]
 
     def _find_option(self, type):
         return tuple(
@@ -127,10 +128,9 @@ class DHCPPacket:
         padding_size = 548 - len(bootp + options)
 
         if padding_size < 0:
-            #TODO Log an error
+            # TODO Log an error
             pass
 
         padding = b''.join(repeat(b'\0', padding_size))
 
         return bootp + options + padding
-

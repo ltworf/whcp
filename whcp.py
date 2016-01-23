@@ -9,6 +9,7 @@ from dhcp import DHCPPacket, DHCPOption
 from leases import Leases
 import ip
 
+
 def make_reply(message, client_addr, message_type, params):
     offer = DHCPPacket(message)
     offer.bootp['OP'] = 2
@@ -23,15 +24,15 @@ def make_reply(message, client_addr, message_type, params):
     offer.options.append(option)
 
     # Server ADDRESS
-    #option = DHCPOption(None)
-    #option.type = DHCPOption.SERVER_IDENTIFIER
-    #option.data = b'0000' # FIXME Int IP address of server
-    #offer.options.append(option)
+    # option = DHCPOption(None)
+    # option.type = DHCPOption.SERVER_IDENTIFIER
+    # option.data = b'0000' # FIXME Int IP address of server
+    # offer.options.append(option)
 
     # Lease time
     option = DHCPOption(None)
     option.type = DHCPOption.LEASE_TIME
-    option.data = b'\xff\xff\xff\x00' # 1 day
+    option.data = b'\xff\xff\xff\x00'  # 1 day
     offer.options.append(option)
 
     # Gateway
@@ -59,13 +60,16 @@ def make_reply(message, client_addr, message_type, params):
 
     return offer
 
+
 def create_socket():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET,IN.SO_BINDTODEVICE,b'eth0' + b'\0') #experimental
+    s.setsockopt(socket.SOL_SOCKET, IN.SO_BINDTODEVICE, b'eth0' + b'\0')
+                 #experimental
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    s.bind(('',67))
+    s.bind(('', 67))
     return s
+
 
 def set_params():
     h = ip.IpAddr('10.0.0.100')
@@ -84,7 +88,7 @@ def set_params():
     p.rangel = ip.IpAddr('10.0.0.50')
     p.rangeh = ip.IpAddr('10.0.0.100')
 
-    switches, _ = getopt.getopt(sys.argv[1:],'g:d:n:r:R:')
+    switches, _ = getopt.getopt(sys.argv[1:], 'g:d:n:r:R:')
 
     for i in switches:
         if i[0] == '-g':
@@ -99,13 +103,15 @@ def set_params():
             p.rangeh = ip.IpAddr(i[1])
     return p
 
+
 def main():
     params = set_params()
     s = create_socket()
-    print('Leasing addresses in range %s - %s' % (params.rangel, params.rangeh))
+    print('Leasing addresses in range %s - %s' %
+          (params.rangel, params.rangeh))
     leases = Leases(params.rangel, params.rangeh)
 
-    while 1: #main loop
+    while 1:  # main loop
         try:
             message, addressf = s.recvfrom(8192)
 
@@ -145,7 +151,7 @@ def main():
 
                 offer = make_reply(message, client_addr, b'\x02', params)
                 data = offer.pack()
-                s.sendto(data,('<broadcast>',68))
+                s.sendto(data, ('<broadcast>', 68))
 
             elif dhcp_message.is_request():
 
@@ -158,12 +164,13 @@ def main():
                     continue
 
                 client_addr = dhcp_message.get_requested_addr()
-                print('Giving out address: %s to %s ' % ( ip.IpAddr(client_addr),dhcp_message.get_hostname()))
+                print('Giving out address: %s to %s ' %
+                      (ip.IpAddr(client_addr), dhcp_message.get_hostname()))
 
                 offer = make_reply(message, client_addr, b'\x05', params)
                 data = offer.pack()
-                s.sendto(data,(str(ip.IpAddr(client_addr)),68))
-                #s.sendto(data,('<broadcast>',68))
+                s.sendto(data, (str(ip.IpAddr(client_addr)), 68))
+                # s.sendto(data,('<broadcast>',68))
             else:
                 print ('Unsupported DHCP message')
 
