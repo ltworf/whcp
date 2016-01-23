@@ -2,17 +2,72 @@
 
 import socket
 import IN
+import sys
+import getopt
 
 from dhcp import DHCPPacket, DHCPOption
 from leases import Leases
 import ip
 
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.setsockopt(socket.SOL_SOCKET,IN.SO_BINDTODEVICE,b'eth0' + b'\0') #experimental
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-s.bind(('',67))
+def make_reply(message, client_addr, message_type):
+    offer = DHCPPacket(message)
+    offer.bootp['OP'] = 2
+    offer.bootp['SECS'] = 0
+    offer.bootp['YIADDR'] = client_addr
+    offer.options = []
 
+    # Type offer
+    option = DHCPOption(None)
+    option.type = DHCPOption.MESSAGE_TYPE
+    option.data = message_type
+    offer.options.append(option)
+
+    # Server ADDRESS
+    option = DHCPOption(None)
+    option.type = DHCPOption.SERVER_IDENTIFIER
+    option.data = b'0000' # FIXME Int IP address of server
+    offer.options.append(option)
+
+    # Lease time
+    option = DHCPOption(None)
+    option.type = DHCPOption.LEASE_TIME
+    option.data = b'\xff\xff\xff\x00' # 1 day
+    offer.options.append(option)
+
+    # Gateway
+    option = DHCPOption(None)
+    option.type = DHCPOption.GATEWAY
+    option.data = b'0000' # FIXME Int IP addr of server
+    offer.options.append(option)
+
+    # Mask
+    option = DHCPOption(None)
+    option.type = DHCPOption.MASK
+    option.data = b'\xff\xff\xff\x00' # FIXME
+    offer.options.append(option)
+
+    # DNS
+    option = DHCPOption(None)
+    option.type = DHCPOption.DNS
+    option.data = b'0000' # FIXME Int IP addr of DNS
+    offer.options.append(option)
+
+    # End
+    option = DHCPOption(None)
+    option.type = DHCPOption.END
+    offer.options.append(option)
+
+    return offer
+
+def create_socket():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET,IN.SO_BINDTODEVICE,b'eth0' + b'\0') #experimental
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    s.bind(('',67))
+    return s
+
+s = create_socket()
 # FIXME custom IP range
 leases = Leases(b'10.0.1.50', b'10.0.1.100')
 
@@ -58,58 +113,8 @@ while 1: #main loop
 
             print('Giving out address: %s' %ip.IpAddr(client_addr))
 
-            # Create offer
-            offer = DHCPPacket(message)
-            offer.bootp['OP'] = 2
-            offer.bootp['SECS'] = 0
-            offer.bootp['YIADDR'] = client_addr
-            offer.options = []
-
-            # Type offer
-            option = DHCPOption(None)
-            option.type = DHCPOption.MESSAGE_TYPE
-            option.data = b'\x02'
-            offer.options.append(option)
-
-            # Server ADDRESS
-            option = DHCPOption(None)
-            option.type = DHCPOption.SERVER_IDENTIFIER
-            option.data = b'0000' # FIXME Int IP address of server
-            offer.options.append(option)
-
-            # Lease time
-            option = DHCPOption(None)
-            option.type = DHCPOption.LEASE_TIME
-            option.data = b'\xff\xff\xff\x00' # 1 day
-            offer.options.append(option)
-
-            # Gateway
-            option = DHCPOption(None)
-            option.type = DHCPOption.GATEWAY
-            option.data = b'0000' # FIXME Int IP addr of server
-            offer.options.append(option)
-
-            # Mask
-            option = DHCPOption(None)
-            option.type = DHCPOption.MASK
-            option.data = b'\xff\xff\xff\x00' # FIXME
-            offer.options.append(option)
-
-            # DNS
-            option = DHCPOption(None)
-            option.type = DHCPOption.DNS
-            option.data = b'0000' # FIXME Int IP addr of DNS
-            offer.options.append(option)
-
-            # End
-            option = DHCPOption(None)
-            option.type = DHCPOption.END
-            offer.options.append(option)
-
+            offer = make_reply(message, client_addr, b'\x02')
             data = offer.pack()
-
-            #print ('lolllello',data)
-
             s.sendto(data,('<broadcast>',68))
 
         elif dhcp_message.is_request():
@@ -124,56 +129,8 @@ while 1: #main loop
 
             client_addr = dhcp_message.get_requested_addr()
 
-            # Create offer
-            offer = DHCPPacket(message)
-            offer.bootp['OP'] = 2
-            offer.bootp['SECS'] = 0
-            offer.bootp['YIADDR'] = client_addr
-            offer.options = []
-
-            # Type ack
-            option = DHCPOption(None)
-            option.type = DHCPOption.MESSAGE_TYPE
-            option.data = b'\x05'
-            offer.options.append(option)
-
-            # Server ADDRESS
-            option = DHCPOption(None)
-            option.type = DHCPOption.SERVER_IDENTIFIER
-            option.data = b'0000' # FIXME Int IP address of server
-            offer.options.append(option)
-
-            # Lease time
-            option = DHCPOption(None)
-            option.type = DHCPOption.LEASE_TIME
-            option.data = b'\xff\xff\xff\x00' # 1 day
-            offer.options.append(option)
-
-            # Mask
-            option = DHCPOption(None)
-            option.type = DHCPOption.MASK
-            option.data = b'\xff\xff\xff\x00' # FIXME
-            offer.options.append(option)
-
-            # Gateway
-            option = DHCPOption(None)
-            option.type = DHCPOption.GATEWAY
-            option.data = b'0000' # FIXME Int IP addr of server
-            offer.options.append(option)
-
-            # DNS
-            option = DHCPOption(None)
-            option.type = DHCPOption.DNS
-            option.data = b'0000' # FIXME Int IP addr of DNS
-            offer.options.append(option)
-
-            # End
-            option = DHCPOption(None)
-            option.type = DHCPOption.END
-            offer.options.append(option)
-
+            offer = make_reply(message, client_addr, b'\x05')
             data = offer.pack()
-
             s.sendto(data,(str(ip.IpAddr(client_addr)),68))
 
         else:
