@@ -23,10 +23,10 @@ def make_reply(message, client_addr, message_type, params):
     offer.options.append(option)
 
     # Server ADDRESS
-    option = DHCPOption(None)
-    option.type = DHCPOption.SERVER_IDENTIFIER
-    option.data = b'0000' # FIXME Int IP address of server
-    offer.options.append(option)
+    #option = DHCPOption(None)
+    #option.type = DHCPOption.SERVER_IDENTIFIER
+    #option.data = b'0000' # FIXME Int IP address of server
+    #offer.options.append(option)
 
     # Lease time
     option = DHCPOption(None)
@@ -37,13 +37,13 @@ def make_reply(message, client_addr, message_type, params):
     # Gateway
     option = DHCPOption(None)
     option.type = DHCPOption.GATEWAY
-    option.data = b'0000' # FIXME Int IP addr of server
+    option.data = bytes(params.gateway)
     offer.options.append(option)
 
     # Mask
     option = DHCPOption(None)
     option.type = DHCPOption.MASK
-    option.data = b'\xff\xff\xff\x00' # FIXME
+    option.data = bytes(params.netmask)
     offer.options.append(option)
 
     # DNS
@@ -158,7 +158,7 @@ def main():
                     continue
 
                 client_addr = dhcp_message.get_requested_addr()
-                print('Giving out address: %s' % ip.IpAddr(client_addr))
+                print('Giving out address: %s to %s ' % ( ip.IpAddr(client_addr),dhcp_message.get_hostname()))
 
                 offer = make_reply(message, client_addr, b'\x05', params)
                 data = offer.pack()
