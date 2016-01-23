@@ -26,6 +26,7 @@ bootp_message = nstruct(
 
 class DHCPOption:
     END = 255
+    MASK = 1
     GATEWAY = 3
     DNS = 6
     MESSAGE_TYPE = 53
@@ -50,7 +51,7 @@ class DHCPOption:
             self.length = 0
 
     def pack(self):
-        if self.type == END:
+        if self.type == self.END:
             return b'\xff'
         return struct.pack('!BB', self.type, len(self.data)) + self.data
 
@@ -90,7 +91,7 @@ class DHCPPacket:
         m = self._find_option(DHCPOption.MESSAGE_TYPE)
         if len(m) == 0:
             return False
-        return m[0].data == b'\x03'
+        return m[0].data == b'\x01'
 
     def get_hostname(self):
         '''
@@ -113,12 +114,16 @@ class DHCPPacket:
         return struct.unpack('!I', m[0].data)[0]
 
     def is_request(self):
+        m = self._find_option(DHCPOption.MESSAGE_TYPE)
+        if len(m) == 0:
+            return False
+        return m[0].data == b'\x03'
         # TODO
         pass
 
     def pack(self):
-        bootp = self.bootp.pack()
-        options = (i.pack() for i in self.options)
+        bootp = bootp_message.pack(self.bootp)
+        options = b''.join(i.pack() for i in self.options)
         padding_size = 548 - len(bootp + options)
 
         if padding_size < 0:
