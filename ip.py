@@ -1,3 +1,5 @@
+import struct
+
 class addr:
     def __eq__(self, other):
         return isinstance(other, addr) and other._addr == self._addr
@@ -91,6 +93,8 @@ class IpAddr(addr):
             if address < 0 or address > 4294967295:
                 raise TypeError('Invalid IP address')
             self._addr = address
+        elif isinstance(address, IpAddr):
+            self._addr = address._addr
         else:
             raise TypeError('IP address can only be created from bytes. str or int')
 
@@ -102,3 +106,5 @@ class IpAddr(addr):
             addr >>= 8
             octets.insert(0, str(val))
         return '.'.join(octets)
+    def __bytes__(self):
+        return struct.pack('!I', self._addr)
