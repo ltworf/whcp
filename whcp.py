@@ -10,6 +10,21 @@ from leases import Leases
 import ip
 
 
+class Params:
+
+    '''
+    Holds the parameters for this program
+    '''
+
+    def __init__(self):
+        self.gateway = ip.IpAddr('0.0.0.0')
+        self.dns = ip.IpAddr('8.8.8.8')
+        self.netmask = ip.IpAddr('255.0.0.0')
+        self.rangel = ip.IpAddr('10.0.0.50')
+        self.rangeh = ip.IpAddr('10.0.0.100')
+        self.iface = b'eth0' + b'\0'
+
+
 def make_reply(message, client_addr, message_type, params):
     '''
     Creates a reply message.
@@ -39,7 +54,7 @@ def make_reply(message, client_addr, message_type, params):
     offer.options.append(option)
 
     # Server ADDRESS
-    ## option = DHCPOption()
+    # option = DHCPOption()
     # option.type = DHCPOption.SERVER_IDENTIFIER
     # option.data = b'0000' # FIXME Int IP address of server
     # offer.options.append(option)
@@ -80,7 +95,7 @@ def create_socket(params):
     print('Binding to interface %s' % params.iface.decode('ascii'))
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, IN.SO_BINDTODEVICE, params.iface)
-                 #experimental
+                 # experimental
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     s.bind(('', 67))
@@ -107,18 +122,7 @@ def set_params():
     str(h)
     int(h)
 
-    class Params:
-        pass
-
     p = Params()
-
-    p.gateway = ip.IpAddr('0.0.0.0')
-    p.dns = ip.IpAddr('8.8.8.8')
-    p.netmask = ip.IpAddr('255.0.0.0')
-    p.rangel = ip.IpAddr('10.0.0.50')
-    p.rangeh = ip.IpAddr('10.0.0.100')
-    p.iface =  b'eth0' + b'\0'
-
     switches, f = getopt.getopt(sys.argv[1:], 'hvi:g:d:n:r:R:')
 
     if f:
@@ -210,7 +214,7 @@ def main():
                 offer = make_reply(message, client_addr, b'\x05', params)
                 data = offer.pack()
                 s.sendto(data, (str(ip.IpAddr(client_addr)), 68))
-                s.sendto(data,('<broadcast>',68))
+                s.sendto(data, ('<broadcast>', 68))
             else:
                 print ('Unsupported DHCP message')
 
