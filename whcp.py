@@ -18,43 +18,43 @@ def make_reply(message, client_addr, message_type, params):
     offer.options = []
 
     # Type offer
-    option = DHCPOption(None)
+    option = DHCPOption()
     option.type = DHCPOption.MESSAGE_TYPE
     option.data = message_type
     offer.options.append(option)
 
     # Server ADDRESS
-    # option = DHCPOption(None)
+    ## option = DHCPOption()
     # option.type = DHCPOption.SERVER_IDENTIFIER
     # option.data = b'0000' # FIXME Int IP address of server
     # offer.options.append(option)
 
     # Lease time
-    option = DHCPOption(None)
+    option = DHCPOption()
     option.type = DHCPOption.LEASE_TIME
     option.data = b'\xff\xff\xff\x00'  # 1 day
     offer.options.append(option)
 
     # Gateway
-    option = DHCPOption(None)
+    option = DHCPOption()
     option.type = DHCPOption.GATEWAY
     option.data = bytes(params.gateway)
     offer.options.append(option)
 
     # Mask
-    option = DHCPOption(None)
+    option = DHCPOption()
     option.type = DHCPOption.MASK
     option.data = bytes(params.netmask)
     offer.options.append(option)
 
     # DNS
-    option = DHCPOption(None)
+    option = DHCPOption()
     option.type = DHCPOption.DNS
     option.data = bytes(params.dns)
     offer.options.append(option)
 
     # End
-    option = DHCPOption(None)
+    option = DHCPOption()
     option.type = DHCPOption.END
     offer.options.append(option)
 
@@ -170,7 +170,7 @@ def main():
                 offer = make_reply(message, client_addr, b'\x05', params)
                 data = offer.pack()
                 s.sendto(data, (str(ip.IpAddr(client_addr)), 68))
-                # s.sendto(data,('<broadcast>',68))
+                s.sendto(data,('<broadcast>',68))
             else:
                 print ('Unsupported DHCP message')
 

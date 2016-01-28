@@ -39,7 +39,7 @@ class DHCPOption:
     HOST_NAME = 12
     PARAMETER_REQUEST = 55
 
-    def __init__(self, raw_data):
+    def __init__(self, raw_data=None):
         if raw_data is not None:
             _, length = struct.unpack('!BB', raw_data[:2])
             type, length, data = struct.unpack('!BB%ds' % length, raw_data)
