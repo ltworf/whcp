@@ -11,6 +11,21 @@ import ip
 
 
 def make_reply(message, client_addr, message_type, params):
+    '''
+    Creates a reply message.
+
+    The incoming message must be passed so that
+    the response will have the same session id.
+
+    client_addr is the address to give.
+    message_type can be b'\x05' or b'\x02'
+        use x02 to reply to discovery
+        and x05 to reply to request
+    params is an object that has fields
+        with the settings.
+
+    returns a binary string
+    '''
     offer = DHCPPacket(message)
     offer.bootp['OP'] = 2
     offer.bootp['SECS'] = 0
