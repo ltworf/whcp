@@ -139,11 +139,6 @@ def print_help(e=0):
 
 
 def set_params():
-    h = ip.IpAddr('10.0.0.100')
-    bytes(h)
-    str(h)
-    int(h)
-
     p = Params()
     switches, f = getopt.getopt(sys.argv[1:], 'hvi:g:d:n:r:R:')
 
