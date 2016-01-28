@@ -77,7 +77,6 @@ def make_reply(message, client_addr, message_type, params):
 
 
 def create_socket(params):
-
     print('Binding to interface %s' % params.iface.decode('ascii'))
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, IN.SO_BINDTODEVICE, params.iface)
@@ -86,6 +85,20 @@ def create_socket(params):
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     s.bind(('', 67))
     return s
+
+
+def print_help(e=0):
+    print('Usage: %s [OPTIONS]' % sys.argv[0])
+    print()
+    print('  -h     Print help and exit')
+    print('  -v     Print version and exit')
+    print('  -i     Set network interface')
+    print('  -g     Set gateway')
+    print('  -d     Set DNS')
+    print('  -n     Set netmask')
+    print('  -r     Set lower end of lease range')
+    print('  -R     Set higher end of lease range')
+    sys.exit(e)
 
 
 def set_params():
@@ -106,21 +119,28 @@ def set_params():
     p.rangeh = ip.IpAddr('10.0.0.100')
     p.iface =  b'eth0' + b'\0'
 
-    switches, _ = getopt.getopt(sys.argv[1:], 'i:g:d:n:r:R:')
+    switches, f = getopt.getopt(sys.argv[1:], 'hvi:g:d:n:r:R:')
+
+    if f:
+        print_help(1)
 
     for i in switches:
         if i[0] == '-g':
             p.gateway = ip.IpAddr(i[1])
-        if i[0] == '-d':
+        elif i[0] == '-d':
             p.dns = ip.IpAddr(i[1])
-        if i[0] == '-n':
+        elif i[0] == '-n':
             p.netmask = ip.IpAddr(i[1])
-        if i[0] == '-r':
+        elif i[0] == '-r':
             p.rangel = ip.IpAddr(i[1])
-        if i[0] == '-R':
+        elif i[0] == '-R':
             p.rangeh = ip.IpAddr(i[1])
-        if i[0] == '-i':
+        elif i[0] == '-i':
             p.iface = i[1].encode('ascii') + b'\0'
+        elif i[0] == '-h':
+            print_help(0)
+        else:
+            print_help(1)
     return p
 
 
