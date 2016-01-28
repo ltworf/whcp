@@ -119,8 +119,6 @@ class DHCPPacket:
         if len(m) == 0:
             return False
         return m[0].data == b'\x03'
-        # TODO
-        pass
 
     def pack(self):
         bootp = bootp_message.pack(self.bootp)
