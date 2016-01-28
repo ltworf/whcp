@@ -103,16 +103,24 @@ def create_socket(params):
 
 
 def print_help(e=0):
+    p = Params()
     print('Usage: %s [OPTIONS]' % sys.argv[0])
     print()
     print('  -h     Print help and exit')
     print('  -v     Print version and exit')
     print('  -i     Set network interface')
+    print('         whcp only binds one interface at a time')
+    print('         default value: %s' % p.iface.decode('ascii'))
     print('  -g     Set gateway')
+    print('         default value: %s' % p.gateway)
     print('  -d     Set DNS')
+    print('         default value: %s' % p.dns)
     print('  -n     Set netmask')
+    print('         default value: %s' % p.netmask)
     print('  -r     Set lower end of lease range')
+    print('         default value: %s' % p.rangel)
     print('  -R     Set higher end of lease range')
+    print('         default value: %s' % p.rangeh)
     sys.exit(e)
 
 
