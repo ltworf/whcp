@@ -76,9 +76,11 @@ def make_reply(message, client_addr, message_type, params):
     return offer
 
 
-def create_socket():
+def create_socket(params):
+
+    print('Binding to interface %s' % params.iface.decode('ascii'))
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET, IN.SO_BINDTODEVICE, b'eth0' + b'\0')
+    s.setsockopt(socket.SOL_SOCKET, IN.SO_BINDTODEVICE, params.iface)
                  #experimental
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -102,8 +104,9 @@ def set_params():
     p.netmask = ip.IpAddr('255.0.0.0')
     p.rangel = ip.IpAddr('10.0.0.50')
     p.rangeh = ip.IpAddr('10.0.0.100')
+    p.iface =  b'eth0' + b'\0'
 
-    switches, _ = getopt.getopt(sys.argv[1:], 'g:d:n:r:R:')
+    switches, _ = getopt.getopt(sys.argv[1:], 'i:g:d:n:r:R:')
 
     for i in switches:
         if i[0] == '-g':
@@ -116,12 +119,14 @@ def set_params():
             p.rangel = ip.IpAddr(i[1])
         if i[0] == '-R':
             p.rangeh = ip.IpAddr(i[1])
+        if i[0] == '-i':
+            p.iface = i[1].encode('ascii') + b'\0'
     return p
 
 
 def main():
     params = set_params()
-    s = create_socket()
+    s = create_socket(params)
     print('Leasing addresses in range %s - %s' %
           (params.rangel, params.rangeh))
     leases = Leases(params.rangel, params.rangeh)
