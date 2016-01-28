@@ -37,5 +37,8 @@ class nstruct(object):
         else:
             d = {k: v for k, v in zip(self._fields, args)}
 
+        if set(d.keys()).difference(self._fields):
+            raise TypeError('Unexpected field in input')
+
         r = [d[i] for i in self._fields]
         return self._s.pack(*r)
