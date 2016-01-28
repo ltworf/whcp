@@ -24,6 +24,21 @@ class Params:
         self.rangeh = ip.IpAddr('10.0.0.100')
         self.iface = b'eth0' + b'\0'
 
+    def __str__(self):
+        r = 'gateway: %s\n' \
+            'DNS: %s\n' \
+            'netmask: %s\n' \
+            'lease range: %s - %s\n' \
+            'network interface: %s\n' % (
+                self.gateway,
+                self.dns,
+                self.netmask,
+                self.rangel,
+                self.rangeh,
+                self.iface.decode('ascii')
+            )
+        return r
+
 
 def make_reply(message, client_addr, message_type, params):
     '''
@@ -92,7 +107,6 @@ def make_reply(message, client_addr, message_type, params):
 
 
 def create_socket(params):
-    print('Binding to interface %s' % params.iface.decode('ascii'))
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, IN.SO_BINDTODEVICE, params.iface)
                  # experimental
@@ -159,8 +173,7 @@ def set_params():
 def main():
     params = set_params()
     s = create_socket(params)
-    print('Leasing addresses in range %s - %s' %
-          (params.rangel, params.rangeh))
+    print(params)
     leases = Leases(params.rangel, params.rangeh)
 
     while 1:  # main loop
