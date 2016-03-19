@@ -107,13 +107,21 @@ def make_reply(message, client_addr, message_type, params):
 
 
 def create_socket(params):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET, IN.SO_BINDTODEVICE, params.iface)
-                 # experimental
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    s.bind(('', 67))
-    return s
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # experimental
+        s.setsockopt(socket.SOL_SOCKET, IN.SO_BINDTODEVICE, params.iface)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.bind(('', 67))
+        return s
+    except PermissionError:
+        print("Permission error", file=sys.stderr)
+        sys.exit(10)
+    except:
+        print("Unable to create and bind the socket", file=sys.stderr)
+        sys.exit(11)
+
 
 
 def print_help(e=0):
