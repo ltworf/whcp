@@ -148,7 +148,10 @@ def print_help(e=0):
 
 def set_params():
     p = Params()
-    switches, f = getopt.getopt(sys.argv[1:], 'hvi:g:d:n:r:R:')
+    try:
+        switches, f = getopt.getopt(sys.argv[1:], 'hvi:g:d:n:r:R:')
+    except:
+        print_help(1)
 
     if f:
         print_help(1)
